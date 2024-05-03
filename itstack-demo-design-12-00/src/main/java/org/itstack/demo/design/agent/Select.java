@@ -8,5 +8,4 @@ import java.lang.annotation.*;
 public @interface Select {
 
     String value() default "";
-
 }

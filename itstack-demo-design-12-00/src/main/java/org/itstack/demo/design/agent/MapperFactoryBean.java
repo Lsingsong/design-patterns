@@ -1,15 +1,12 @@
 package org.itstack.demo.design.agent;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.sf.cglib.proxy.Enhancer;
+import org.itstack.demo.design.agent.cglib.CglibProxy;
+import org.itstack.demo.design.agent.jdk.JDKProxy;
+import org.itstack.demo.design.agent.service.UserService;
 import org.springframework.beans.factory.FactoryBean;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-
 public class MapperFactoryBean<T> implements FactoryBean<T> {
-
-    private Logger logger = LoggerFactory.getLogger(MapperFactoryBean.class);
 
     private Class<T> mapperInterface;
 
@@ -19,12 +16,15 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
 
     @Override
     public T getObject() throws Exception {
-        InvocationHandler handler = (proxy, method, args) -> {
-            Select select = method.getAnnotation(Select.class);
-            logger.info("SQL：{}", select.value().replace("#{uId}", args[0].toString()));
-            return args[0] + ",小傅哥,bugstack.cn - 沉淀、分享、成长，让自己和他人都能有所收获！";
-        };
-        return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{mapperInterface}, handler);
+        T proxy = JDKProxy.getProxy(mapperInterface);
+
+
+        CglibProxy cglibProxy = new CglibProxy();
+        UserService userService = (UserService) cglibProxy.newInstall(new UserService());
+        String userName = userService.queryUserNameById("10001");
+        System.out.println(userName);
+
+        return proxy;
     }
 
     @Override
@@ -36,5 +36,4 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
     public boolean isSingleton() {
         return true;
     }
-
 }
